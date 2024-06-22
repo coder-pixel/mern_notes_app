@@ -1,0 +1,11 @@
+# frontend
+/frontend/node_modules
+/frontend/nuild
+/frontend/package-lock.json
+/frontend/yarn.lock
+
+# backend
+/Backend/node_modules
+/Backend/build
+/Backend/package-lock.json
+/Backend/yarn.lock

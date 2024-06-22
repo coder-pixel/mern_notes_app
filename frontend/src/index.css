@@ -1,0 +1,74 @@
+@import url("https://fonts.googleapis.com/css2?family=Work+Sans:wght@200&display=swap");
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Work Sans", "Segoe UI",
+    "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+    "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+.customNavbar {
+  /* background-color: red; */
+
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.customNavbar a {
+  color: #eee;
+  text-decoration: none;
+}
+
+.customNavbar a:hover {
+  color: inherit;
+  opacity: 0.8;
+}
+
+.customNavbar .dropdown a {
+  color: inherit;
+}
+
+.uploadImagePreview {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  background-color: red;
+  width: 50px;
+  height: 40px;
+  margin: 10px;
+  position: relative;
+}
+
+.removeAttachment {
+  color: #f16667 !important;
+  border-radius: 50%;
+  outline: 0;
+  border: 0;
+  background-color: #fff !important;
+  font-size: 12px;
+  height: 16px;
+  width: 16px;
+  padding: 0;
+  text-align: center;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  box-shadow: 0px 0px 3px 0px rgba(0, 0, 0, 0.4) !important;
+  cursor: pointer;
+  z-index: 99;
+}
+
+.removeAttachment i {
+  margin-left: -0.5px;
+  font-size: 12px;
+  margin-right: 0;
+  color: #f16667;
+}
