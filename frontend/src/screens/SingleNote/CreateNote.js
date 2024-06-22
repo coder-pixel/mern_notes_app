@@ -1,37 +1,154 @@
 import React, { useEffect, useState } from "react";
 import MainScreen from "../../components/MainScreen";
 import { Button, Card, Form } from "react-bootstrap";
-// import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 // import { createNoteAction } from "../../actions/notesActions";
-import Loading from "../../components/Loading";
-import ErrorMessage from "../../components/ErrorMessage";
 import ReactMarkdown from "react-markdown";
+import {
+  errorHandler,
+  formatDateAndTime,
+  showToast,
+} from "../../helper-methods";
+import { createNewNote } from "../../http/http-calls";
+import { addNewNote } from "../../actions/notesActions";
+
+const initialFormFields = {
+  title: "",
+  content: "",
+  category: "",
+};
+const initialIsDirty = {
+  title: "",
+  content: "",
+  category: "",
+};
 
 function CreateNote({ history }) {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [category, setCategory] = useState("");
+  const [formFields, setFormFields] = useState(initialFormFields);
+  const [isDirty, setIsDirty] = useState(initialIsDirty);
+  const [errors, setErrors] = useState({});
 
-  // const dispatch = useDispatch();
+  const [loading, setLoading] = useState({
+    createLoading: false,
+  });
 
-  // const noteCreate = useSelector((state) => state.noteCreate);
-  // const { loading, error, note } = noteCreate;
-
-  // console.log(note);
-
-  const resetHandler = () => {
-    setTitle("");
-    setCategory("");
-    setContent("");
+  const _manageLoading = (key = "dataLoading", value = false) => {
+    const newLoading = { ...loading };
+    newLoading[key] = value;
+    setLoading(newLoading);
   };
 
-  const submitHandler = (e) => {
-    e.preventDefault();
-    // dispatch(createNoteAction(title, content, category));
-    if (!title || !content || !category) return;
+  const dispatch = useDispatch();
 
-    resetHandler();
-    history.push("/mynotes");
+  const _resetState = () => {
+    setFormFields(initialFormFields);
+    setIsDirty(initialIsDirty);
+    setErrors({});
+  };
+
+  const _setFormFields = (key = "", value = "") => {
+    const newFormFields = { ...formFields };
+    const newIsDirty = { ...isDirty };
+
+    newFormFields[key] = value;
+    newIsDirty[key] = true;
+
+    setFormFields(newFormFields);
+    setIsDirty(newIsDirty);
+
+    _validateFormFields({ newFormFields, newIsDirty });
+  };
+
+  const _validateFormFields = ({ newFormFields, newIsDirty }) => {
+    return new Promise((resolve) => {
+      const newErrors = {};
+      let isFormValid = true;
+
+      Object.keys(newFormFields)?.forEach((key) => {
+        if (newIsDirty?.[key]) {
+          switch (key) {
+            case "title":
+            case "content":
+            case "category": {
+              if (newFormFields?.[key]?.length) {
+                newErrors[key] = null;
+                newIsDirty[key] = false;
+              } else {
+                isFormValid = false;
+                newErrors[key] = `*${key} is required`;
+              }
+              break;
+            }
+
+            default:
+          }
+        }
+      });
+
+      setErrors((prev) => ({
+        ...prev,
+        ...newErrors,
+      }));
+
+      setIsDirty(newIsDirty);
+
+      resolve(isFormValid);
+    });
+  };
+
+  // function to mark all formfields dirty for validation
+  const _markAllDirty = () => {
+    return new Promise((resolve) => {
+      const newIsDirty = { ...isDirty };
+
+      Object.keys(newIsDirty)?.forEach((key) => {
+        newIsDirty[key] = true;
+      });
+
+      resolve(newIsDirty);
+    });
+  };
+
+  const _createNote = async (e) => {
+    try {
+      if (e) e.preventDefault();
+
+      _manageLoading("createLoading", true);
+
+      const newFormFields = { ...formFields };
+
+      const newIsDirty = await _markAllDirty();
+
+      const isFormValid = await _validateFormFields({
+        newFormFields,
+        newIsDirty,
+      });
+
+      if (!isFormValid) {
+        errorHandler({ reason: "Please fill all mandatory fields!" });
+        _manageLoading("createLoading", false);
+        return;
+      }
+
+      const payload = {
+        title: formFields?.title,
+        content: formFields?.content,
+        category: formFields?.category,
+      };
+
+      const res = await createNewNote(payload);
+      console.log({ res });
+
+      dispatch(addNewNote(res?.createdNote));
+
+      _manageLoading("createLoading", false);
+      _resetState();
+      showToast("Note added successfully");
+      history.push("/mynotes");
+    } catch (err) {
+      errorHandler(err);
+      _manageLoading("createLoading", false);
+    }
   };
 
   useEffect(() => {}, []);
@@ -41,33 +158,38 @@ function CreateNote({ history }) {
       <Card>
         <Card.Header>Create a new Note</Card.Header>
         <Card.Body>
-          <Form onSubmit={submitHandler}>
-            {/* {error && <ErrorMessage variant="danger">{error}</ErrorMessage>} */}
+          <Form onSubmit={_createNote}>
             <Form.Group controlId="title">
               <Form.Label>Title</Form.Label>
               <Form.Control
                 type="title"
-                value={title}
+                value={formFields?.title}
                 placeholder="Enter the title"
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => _setFormFields("title", e.target.value)}
               />
+              {errors?.title ? (
+                <p className="text-danger">{errors?.title}</p>
+              ) : null}
             </Form.Group>
 
             <Form.Group controlId="content">
               <Form.Label>Content</Form.Label>
               <Form.Control
                 as="textarea"
-                value={content}
+                value={formFields?.content}
                 placeholder="Enter the content"
                 rows={4}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={(e) => _setFormFields("content", e.target.value)}
               />
+              {errors?.content ? (
+                <p className="text-danger">{errors?.content}</p>
+              ) : null}
             </Form.Group>
-            {content && (
+            {formFields?.content && (
               <Card>
                 <Card.Header>Note Preview</Card.Header>
                 <Card.Body>
-                  <ReactMarkdown>{content}</ReactMarkdown>
+                  <ReactMarkdown>{formFields?.content}</ReactMarkdown>
                 </Card.Body>
               </Card>
             )}
@@ -76,23 +198,37 @@ function CreateNote({ history }) {
               <Form.Label>Category</Form.Label>
               <Form.Control
                 type="content"
-                value={category}
+                value={formFields?.category}
                 placeholder="Enter the Category"
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e) => _setFormFields("category", e.target.value)}
               />
+              {errors?.category ? (
+                <p className="text-danger">{errors?.category}</p>
+              ) : null}
             </Form.Group>
-            {/* {loading && <Loading size={50} />} */}
-            <Button type="submit" variant="primary">
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={loading?.createLoading}
+            >
+              {loading?.createLoading ? (
+                <i className="fa fa-spinner fa-spin mr-1" />
+              ) : null}
               Create Note
             </Button>
-            <Button className="mx-2" onClick={resetHandler} variant="danger">
-              Reset Feilds
+            <Button
+              className="mx-2"
+              onClick={_resetState}
+              variant="danger"
+              disabled={loading?.createLoading}
+            >
+              Reset Fields
             </Button>
           </Form>
         </Card.Body>
 
         <Card.Footer className="text-muted">
-          Creating on - {new Date().toLocaleDateString()}
+          Creating on - {formatDateAndTime(new Date())}
         </Card.Footer>
       </Card>
     </MainScreen>

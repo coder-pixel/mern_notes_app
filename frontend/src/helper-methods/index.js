@@ -2,12 +2,14 @@ import toast from "react-hot-toast";
 import { store as REDUX_STORE } from "../store";
 import { clearUserData } from "../actions/userActions";
 import moment from "moment";
+import { clearNotesData } from "../actions/notesActions";
 
 export const logout = (navRef = null) => {
   // can also remove any redux data and anything else like disconnecting from socket etc, before logging out
   // localStorage.clear();
   localStorage.removeItem("userToken");
   REDUX_STORE.dispatch(clearUserData());
+  REDUX_STORE.dispatch(clearNotesData());
 
   if (navRef) {
     navRef.replace("/login");

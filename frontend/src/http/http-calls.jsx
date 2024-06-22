@@ -1,5 +1,9 @@
 import { BASE_URL } from "../config";
-import { makeGetRequest, makePostRequest } from "./http-services";
+import {
+  makeDeleteRequest,
+  makeGetRequest,
+  makePostRequest,
+} from "./http-services";
 
 export const Login = (payload) => {
   return new Promise((resolve, reject) => {
@@ -45,6 +49,32 @@ export const getIpData = () => {
 export const getAllNotes = () => {
   return new Promise((resolve, reject) => {
     makeGetRequest(BASE_URL + "/api/notes", true)
+      .then((res) => {
+        resolve(res);
+      })
+      .catch((e) => {
+        console.log("API call error: ", e);
+        reject(e);
+      });
+  });
+};
+
+export const createNewNote = (payload) => {
+  return new Promise((resolve, reject) => {
+    makePostRequest(BASE_URL + "/api/notes/create", true, payload)
+      .then((res) => {
+        resolve(res);
+      })
+      .catch((e) => {
+        console.log("API call error: ", e);
+        reject(e);
+      });
+  });
+};
+
+export const deleteSingleNote = (id) => {
+  return new Promise((resolve, reject) => {
+    makeDeleteRequest(BASE_URL + `/api/notes/${id}`, true)
       .then((res) => {
         resolve(res);
       })

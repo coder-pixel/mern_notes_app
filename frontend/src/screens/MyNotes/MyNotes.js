@@ -1,101 +1,108 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Accordion, Badge, Button, Card } from "react-bootstrap";
-import MainScreen from "../../components/MainScreen";
-import { Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
-
 import { useDispatch, useSelector } from "react-redux";
-// import { deleteNoteAction, listNotes } from "../../actions/notesActions";
+import { Link } from "react-router-dom";
+import MainScreen from "../../components/MainScreen";
+import Swal from "sweetalert2";
+import { deleteNote, listNotes } from "../../actions/notesActions";
 import Loading from "../../components/Loading";
-import ErrorMessage from "../../components/ErrorMessage";
-import { getAllNotes } from "../../http/http-calls";
-import notes from "../../data/notes";
-import { errorHandler, formatDateAndTime } from "../../helper-methods";
-import { listNotes } from "../../actions/notesActions";
+import {
+  errorHandler,
+  formatDateAndTime,
+  showToast,
+} from "../../helper-methods";
+import { deleteSingleNote, getAllNotes } from "../../http/http-calls";
 
-function MyNotes({ history, search }) {
+function MyNotes({ search }) {
   const dispatch = useDispatch();
 
-  const noteList = useSelector((state) => state?.noteList);
-  console.log({ noteList });
-  // const { loading, error, notes } = noteList;
+  const noteList = useSelector((state) => state?.noteList?.notes);
 
-  // const filteredNotes = notes.filter((note) =>
-  //   note.title.toLowerCase().includes(search.toLowerCase())
-  // );
+  const [loading, setLoading] = useState({
+    dataLoading: false,
+    deleteLoading: false,
+  });
 
-  // const userLogin = useSelector((state) => state.userLogin);
-  // const { userInfo } = userLogin;
+  const _manageLoading = (key = "dataLoading", value = false) => {
+    const newLoading = { ...loading };
+    newLoading[key] = value;
+    setLoading(newLoading);
+  };
 
-  // const noteDelete = useSelector((state) => state.noteDelete);
-  // const {
-  //   loading: loadingDelete,
-  //   error: errorDelete,
-  //   success: successDelete,
-  // } = noteDelete;
+  const userInfo = useSelector((state) => state?.user?.userInfo);
 
-  // const noteCreate = useSelector((state) => state.noteCreate);
-  // const { success: successCreate } = noteCreate;
+  const _deleteNoteAlert = async (id) => {
+    try {
+      if (!id) return;
 
-  // const noteUpdate = useSelector((state) => state.noteUpdate);
-  // const { success: successUpdate } = noteUpdate;
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: `You want to remove this note.`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#f16667",
+        cancelButtonColor: "#111",
+        confirmButtonText: "Yes, remove it!",
+      });
 
-  // useEffect(() => {
-  //   dispatch(listNotes());
-  //   if (!userInfo) {
-  //     history.push("/");
-  //   }
-  // }, [
-  //   dispatch,
-  //   history,
-  //   userInfo,
-  //   successDelete,
-  //   successCreate,
-  //   successUpdate,
-  // ]);
+      if (result.isConfirmed) {
+        _deleteNote(id);
+      }
+    } catch (err) {
+      errorHandler(err);
+    }
+  };
 
-  useEffect(() => {
-    _getAllNotes();
-  }, []);
+  const _deleteNote = async (noteId) => {
+    try {
+      const res = await deleteSingleNote(noteId);
+
+      if (!res?.error) {
+        dispatch(deleteNote(noteId));
+        showToast("Note Deleted Successfully");
+      }
+    } catch (err) {
+      errorHandler(err);
+    }
+  };
 
   const _getAllNotes = async () => {
     try {
+      _manageLoading("dataLoading", true);
       const res = await getAllNotes();
-      console.log({ res });
 
       dispatch(listNotes(res?.notes));
+      _manageLoading("dataLoading", false);
+      showToast("Notes fetched successfully");
     } catch (err) {
-      errorHandler("Sasas");
+      _manageLoading("dataLoading", false);
+      errorHandler(err);
     }
   };
 
-  const deleteHandler = (id) => {
-    if (window.confirm("Are you sure?")) {
-      // dispatch(deleteNoteAction(id));
+  useEffect(() => {
+    if (!noteList?.length) {
+      _getAllNotes();
     }
-  };
+  }, []);
 
   return (
-    <MainScreen title={`Welcome Back ..`}>
+    <MainScreen title={`Welcome Back, ${userInfo?.name}`}>
       <Link to="/createnote">
         <Button style={{ marginLeft: 10, marginBottom: 6 }} size="lg">
           Create new Note
         </Button>
       </Link>
-      {/* {error && <ErrorMessage variant="danger">{error}</ErrorMessage>}
-      {errorDelete && (
-        <ErrorMessage variant="danger">{errorDelete}</ErrorMessage>
-      )} */}
-      {/* {loading && <Loading />}
-      {loadingDelete && <Loading />} */}
-      {noteList &&
+
+      {noteList?.length ? (
         noteList
           ?.filter((filteredNote) =>
             filteredNote?.title?.toLowerCase()?.includes(search?.toLowerCase())
           )
-          ?.reverse()
+          ?.sort((a, b) => new Date(b?.createdAt) - new Date(a.createdAt)) // sorting in descending order by date i.e latest date on top
           ?.map((note) => (
-            <Accordion>
+            <Accordion key={note?._id}>
               <Card style={{ margin: 10 }} key={note?._id}>
                 <Card.Header style={{ display: "flex" }}>
                   <span
@@ -123,7 +130,7 @@ function MyNotes({ history, search }) {
                     <Button
                       variant="danger"
                       className="mx-2"
-                      onClick={() => deleteHandler(note._id)}
+                      onClick={() => _deleteNoteAlert(note?._id)}
                     >
                       Delete
                     </Button>
@@ -149,7 +156,12 @@ function MyNotes({ history, search }) {
                 </Accordion.Collapse>
               </Card>
             </Accordion>
-          ))}
+          ))
+      ) : loading?.dataLoading ? (
+        <Loading />
+      ) : (
+        <p className="d-flex justify-content-center">No Data Found</p>
+      )}
     </MainScreen>
   );
 }
