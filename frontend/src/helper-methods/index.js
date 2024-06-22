@@ -15,7 +15,7 @@ export const logout = (navRef = null) => {
   }
 };
 
-export const showToast = (message, type = "error", duration = 4000) => {
+export const showToast = (message, type = "success", duration = 4000) => {
   toast.dismiss();
 
   toast[type](message, { duration });
@@ -26,7 +26,8 @@ export const errorHandler = (error) => {
   showToast(
     error?.reason?.length || error?.message?.length || error?.error?.length
       ? error?.reason || error?.message || error?.error
-      : "Something went wrong, Try again later."
+      : "Something went wrong, Try again later.",
+    "error"
   );
 };
 

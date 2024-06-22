@@ -171,7 +171,7 @@ const LoginScreen = () => {
       const res = await Login(payload);
       _onLoginComplete(res);
 
-      showToast("Login successfully", "success");
+      showToast("Login successfully");
       _manageLoading("loginLoading", false);
     } catch (err) {
       errorHandler(err?.response?.data);

@@ -237,7 +237,7 @@ const RegisterScreen = () => {
       const res = await signUp(payload);
       _onSignupComplete(res);
 
-      showToast("User added successfully", "success");
+      showToast("User added successfully");
       _manageLoading("registerLoading", false);
     } catch (err) {
       errorHandler(err?.response?.data);
