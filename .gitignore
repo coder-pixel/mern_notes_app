@@ -9,3 +9,4 @@
 /Backend/build
 /Backend/package-lock.json
 /Backend/yarn.lock
+/Backend/.env
