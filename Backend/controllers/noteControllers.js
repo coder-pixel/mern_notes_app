@@ -1,3 +1,4 @@
+const { formatSuccessResponse } = require("../helper-methods/index.jsx");
 const Note = require("../models/noteModal");
 const asyncHandler = require("express-async-handler");
 
@@ -7,7 +8,7 @@ const getNotes = asyncHandler(async (req, res) => {
 
   const notes = await Note.find({ user: req?.user?._id });
 
-  res.json({ error: false, notes });
+  res.json(formatSuccessResponse({ notes }));
 });
 
 // controller handler to create a note
@@ -17,14 +18,14 @@ const createNote = asyncHandler(async (req, res) => {
   if (!title || !content || !category) {
     return res
       .status(400)
-      .json({ error: true, reason: "Required fields not provided" });
+      .json({ error: true, reason: "Required fields are not provided" });
   }
 
   // req.user -> coming from the 'protect' middleware
   const newNote = new Note({ user: req?.user?._id, title, content, category });
 
   const createdNote = await newNote.save();
-  res.status(201).json(createdNote);
+  res.status(201).json(formatSuccessResponse({ createdNote }));
 });
 
 // controller to get a single note with given id
@@ -35,7 +36,11 @@ const getSingleNoteById = asyncHandler(async (req, res) => {
     return res.status(404).json({ error: true, reason: "Note not found!" });
   }
 
-  res.status(201).json(foundNote);
+  res
+    .status(201)
+    .json(
+      formatSuccessResponse({ data: formatSuccessResponse({ foundNote }) })
+    );
 });
 
 // controller to update a single note with given id
@@ -55,7 +60,7 @@ const updateSingleNote = asyncHandler(async (req, res) => {
     foundNote.category = category;
 
     const updatedNote = await foundNote.save();
-    res.json(updatedNote);
+    res.json(formatSuccessResponse({ updatedNote }));
   } else {
     return res.status(404).json({ error: true, reason: "Note  not found" });
   }
@@ -71,9 +76,9 @@ const deleteNote = asyncHandler(async (req, res) => {
 
   if (foundNote) {
     await foundNote.deleteOne();
-    res.json({ message: "Note removed" });
+    res.json(formatSuccessResponse({ message: "Note removed" }));
   } else {
-    res.status(404).json({ reason: "Note not found" });
+    res.status(404).json({ error: true, reason: "Note not found" });
   }
 });
 
